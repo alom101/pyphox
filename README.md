@@ -6,6 +6,12 @@ Simple python wrapper for the Phyphox Remote-interface Communication API
 
 Clone/download the repository to your project folder.
 
+## Linux
+```
+cd /PATH/TO/YOUR/PROJECT
+git clone git@github.com:alom101/pyphox.git
+```
+
 # Usage
 
 *With Phyphox on remote access mode*
@@ -16,7 +22,7 @@ import phyphox
 exp = phyphox.Experiment('PHONE_IP_HERE','PHONE_PORT_HERE')
 ```
 
-## Some experiment data available
+## Experiment data available
 ```
 exp.crc32
 exp.title
@@ -58,3 +64,4 @@ Read more on https://phyphox.org/wiki/index.php/Remote-interface_communication#.
 # ToDo
 - Handle exceptions
 - Handle entire url on Experiment.__init__
+- Enable installation via pip

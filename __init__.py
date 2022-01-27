@@ -48,6 +48,6 @@ class Experiment:
         return self.api('get?' + params)
 
     def api(self, cmd):
-        '''Sends a generic command'''
+        '''Sends a generic api call to: "http://{ip}:{port}/{cmd}"'''
         response = urlopen(self.address + cmd)
         return json.loads(response.read().decode())
