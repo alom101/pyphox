@@ -42,20 +42,26 @@ exp.clear()
 Read more on https://phyphox.org/wiki/index.php/Remote-interface_communication#.2Fcontrol
 
 ## Retrieving data
-*Warning:* exp.get will be changed to a more user friendly method in the future
 
-### All data
+### Easy way
+```
+exp.update_buffers() #get all new data since last update
+data = exp.buffers
+```
+
+### Hard way
+#### All data
 ```
 data = exp.get()
 ```
 
-### Only from some buffers
+#### Only from some buffers
 ```
 buffer_list = ['abc', 'efg']
 data = exp.get(buffer_list)
 ```
 
-### Only after some threshold
+#### Only after some threshold
 ```
 data = exp.get(threshold='2|time_buffer') #Retrieves all buffers after t=2
 ```

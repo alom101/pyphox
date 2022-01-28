@@ -5,7 +5,10 @@ import json
 class Experiment:
     def __init__(self, ip, port=8080):
         self.address = f'http://{ip}:{port}/'
-        self.update_config()
+        self._update_config()
+        self.buffers = {}
+        for name in self.bufferNames:
+            self.buffers[name] = []
 
     def start(self):
         '''Starts the experiment'''
@@ -22,7 +25,7 @@ class Experiment:
         response = self.api('control?cmd=clear')
         return response['result']
 
-    def update_config(self):
+    def _update_config(self):
         '''Updates the known experiment configuration'''
         config = self.api('config')
         self.crc32 = config['crc32']
@@ -33,6 +36,7 @@ class Experiment:
         self.bufferNames = []
         for b in config['buffers']:
             self.bufferNames.append(b['name'])
+        self.time_buffer_candidates = self.bufferNames.copy()
         return
 
     def get(self, buffers=None, threshold=None):
@@ -45,9 +49,41 @@ class Experiment:
         for b in buffers:
             params[b] = str(threshold)
         params = urlencode(params, safe='|')
-        return self.api('get?' + params)
+        data =  self.api('get?' + params)
+        response = {}
+        for name in data['buffer']:
+            response[name] = data['buffer'][name]['buffer']
+        return response
 
     def api(self, cmd):
         '''Sends a generic api call to: "http://{ip}:{port}/{cmd}"'''
         response = urlopen(self.address + cmd)
         return json.loads(response.read().decode())
+
+    def _time_buffer_candidates_check(self):
+        not_time_buffers = []
+        for name in self.time_buffer_candidates:
+            data = self.buffers[name]
+            if self._is_not_growing(data):
+                not_time_buffers.append(name)
+        for name in not_time_buffers:
+            self.time_buffer_candidates.remove(name)
+        return self.time_buffer_candidates[0]
+
+    def _is_not_growing(self, data):
+        for i in range(len(data)-1):
+            if data[i+1] <= data[i]:
+                return True
+        return False
+
+    def update_buffers(self):
+        time_buffer_name = self._time_buffer_candidates_check()
+        try:
+            last_time = self.buffers[time_buffer_name][-1]
+            time_threshold = f'{last_time}|{time_buffer_name}'
+        except IndexError:
+            time_threshold = None
+        data = self.get(threshold=time_threshold)
+        for name in data.keys():
+            self.buffers[name] = self.buffers[name] + data[name]
+        return
