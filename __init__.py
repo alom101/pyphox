@@ -1,5 +1,6 @@
 from urllib.request import urlopen
 from urllib.parse import urlencode
+from threading import Thread
 import json
 
 class Experiment:
@@ -9,6 +10,8 @@ class Experiment:
         self.buffers = {}
         for name in self.bufferNames:
             self.buffers[name] = []
+        self.update_thread = Thread(target=self._auto_update)
+        self.update_thread.start()
 
     def start(self):
         '''Starts the experiment'''
@@ -23,6 +26,9 @@ class Experiment:
     def clear(self):
         '''Clear all buffers'''
         response = self.api('control?cmd=clear')
+        self.buffers = {}
+        for name in self.bufferNames:
+            self.buffers[name] = []
         return response['result']
 
     def _update_config(self):
@@ -57,7 +63,7 @@ class Experiment:
 
     def api(self, cmd):
         '''Sends a generic api call to: "http://{ip}:{port}/{cmd}"'''
-        response = urlopen(self.address + cmd)
+        response = urlopen(self.address + cmd) #NEED A TIMEOUT and urllib.error.URLError handling!!!
         return json.loads(response.read().decode())
 
     def _time_buffer_candidates_check(self):
@@ -76,7 +82,7 @@ class Experiment:
                 return True
         return False
 
-    def update_buffers(self):
+    def _update_buffers(self):
         time_buffer_name = self._time_buffer_candidates_check()
         try:
             last_time = self.buffers[time_buffer_name][-1]
@@ -87,3 +93,7 @@ class Experiment:
         for name in data.keys():
             self.buffers[name] = self.buffers[name] + data[name]
         return
+
+    def _auto_update(self):
+        while True:
+            self._update_buffers()
