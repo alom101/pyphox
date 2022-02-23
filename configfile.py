@@ -44,7 +44,7 @@ class File:
                 buffer.text = f'{sensor.abrev}_{output}'
         return
 
-    def add_mqtt_connection(self, broker_ip, sensors):
+    def add_mqtt_connection(self, broker_ip, sensors):  #COLOCAR LOGIN E SENHA AQUIIIIII
         if type(sensors) is not list:
             sensors = [sensors]
 
