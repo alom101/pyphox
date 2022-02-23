@@ -1,9 +1,148 @@
 from urllib.request import urlopen
 from urllib.parse import urlencode
+from urllib.error import URLError
 from threading import Thread
+from dataclasses import dataclass
 import json
 
+@dataclass
+class Phone:
+    version: str
+    build: str
+    file_format: str
+    devide_model: str
+    device_board: str
+    devide_manufacturer: str
+    device_base_os: str
+    device_codename: str
+    device_release: str
+    depth_front_sensor: str
+    depth_back_sensor: str
+    sensors: list
+
+@dataclass
+class Sensor:
+    type: str
+    name: str
+    vendor: str
+    range: float
+    resolution: float
+    min_delay: int
+    max_delay: int
+    power: float
+    version: int
+
+@dataclass
 class Experiment:
+    crc32: str
+    title: str
+    local_title: str
+    category: str
+    local_category: str
+
+
+class RemoteInterface:
+    '''
+    Interface with phyphox's API
+    Read more on https://phyphox.org/wiki/index.php/Remote-interface_communication
+    '''
+
+    def __init__(self, ip, port=8080):
+        self.address = f'http://{ip}:{port}/'
+
+    def get(self, buffers=[], threshold=None, reference=''):
+        '''Retrieves buffer data'''
+        response = self._api('get',params)
+
+    def start(self):
+        '''Starts the experiment'''
+        response = self._api('control',{'cmd':'start'})
+        return response['result']
+
+    def stop(self):
+        '''Stops the experiment'''
+        response = self._api('control',{'cmd':'stop'})
+        return response['result']
+
+    def clear(self):
+        '''Clear all buffers'''
+        response = self._api('control',{'cmd':'clear'})
+        return response['result']
+
+    def config(self):
+        resp = self._api('config')
+
+        exp = Experiment(
+                        resp['crc32'],
+                        resp['title'],
+                        resp['localTitle'],
+                        resp['category'],
+                        resp['localCategory']
+                        )
+
+        buffer_sizes = {}
+        for buff in resp['buffers']:
+            buffer_sizes[buff['name']] = buff['size']
+
+        inputs = {}
+        for sensor in resp['inputs']:
+            sensor_name = sensor['source']
+            sensor_data = {}
+            for out in sensor['outputs']:
+                out_name = list(out.keys())[0]
+                buffer_name = out[out_name]
+                sensor_data[out_name] = buffer_name
+            inputs[sensor_name] = sensor_data
+
+        sets = {}
+        for set in resp['export']:
+            set_name = set['set']
+            set_data = {}
+            for src in set['sources']:
+                set_data[src['buffer']] = src['label']
+            sets[set_name] = set_data
+
+        return exp, buffer_sizes, inputs, sets
+
+    def meta(self):
+        '''
+        tip: pd.DataFrame(exp.meta())
+        https://phyphox.org/wiki/index.php/Network_Connections#Metadata
+        '''
+        response = self._api('meta')
+        return response['sensors'] #for now
+
+    def time(self):
+        response = self._api('time')
+        return response
+
+    def _api(self, cmd, params={}, timeout=10):
+        '''Sends a generic api call to: "http://{ip}:{port}/{cmd}?{params_key=params_value}"'''
+        url = f'{self.address}{cmd}?{urlencode(params)}'
+        response = urlopen(url, timeout=timeout)
+        return json.loads(response.read().decode())
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class old_Experiment:
     def __init__(self, ip, port=8080):
         self.address = f'http://{ip}:{port}/'
         self._update_config()
@@ -90,7 +229,7 @@ class Experiment:
         except IndexError:
             time_threshold = None
         data = self.get(threshold=time_threshold)
-        for name in data.keys():
+        for name in data.keys(): #Duplicating data here!
             self.buffers[name] = self.buffers[name] + data[name]
         return
 
