@@ -4,6 +4,7 @@ from urllib.error import URLError
 from threading import Thread
 from dataclasses import dataclass
 import json
+from .configfile import File
 
 @dataclass
 class Phone:
